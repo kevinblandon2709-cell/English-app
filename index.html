@@ -1,170 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>English</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <title>Language App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial;
+      background: #f7f7f7;
       text-align: center;
       padding: 20px;
-      background: #eef2f3;
     }
-
     .card {
       background: white;
       padding: 20px;
-      border-radius: 15px;
-      margin: 15px auto;
+      border-radius: 20px;
+      margin: 20px auto;
       max-width: 400px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
-
     button {
-      padding: 10px 15px;
-      margin: 5px;
-      font-size: 16px;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 10px;
       border: none;
-      border-radius: 8px;
-      background: #4CAF50;
+      background: #58cc02;
       color: white;
+      font-size: 16px;
     }
-
     input {
       padding: 10px;
       width: 80%;
-      font-size: 16px;
-      margin-top: 10px;
+      margin: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 
 <body>
 
-<h2>English</h2>
+<h1>Select Language</h1>
 
 <div class="card">
-  <h3 id="level">Level: 1</h3>
-  <h3 id="score">Score: 0</h3>
-
-  <p id="sentence"></p>
-
-  <button onclick="speak(1)">🔊 Normal</button>
-  <button onclick="speak(0.6)">🐢 Slow</button>
-  <br>
-  <button onclick="startRecognition()">🎤 Speak</button>
-
-  <p id="speechResult"></p>
+  <button onclick="start('english')">English</button>
+  <button onclick="start('spanish')">Spanish</button>
+  <button onclick="start('french')">French</button>
 </div>
 
-<div class="card">
-  <h3>Type what you hear:</h3>
-  <input id="typingInput" type="text">
+<div class="card" id="app" style="display:none;">
+  <h2 id="question"></h2>
+  <button onclick="speak()">🔊 Speak</button>
   <br>
-  <button onclick="checkTyping()">Check</button>
-
-  <p id="typingResult"></p>
+  <input id="answer" placeholder="Type what you hear">
+  <br>
+  <button onclick="check()">Check</button>
+  <p id="result"></p>
 </div>
 
 <script>
-let level = 1;
-let score = 0;
-let currentSentence = "";
-
-const sentences = {
-  1: ["Hello", "Good morning", "Thank you"],
-  2: ["How are you?", "I am fine", "Nice to meet you"],
-  3: ["I would like some water", "Can you help me?", "Where is the store?"]
+let words = {
+  english: ["hello","good morning","thank you","beautiful","computer","language","education","challenge","experience","development"],
+  spanish: ["hola","buenos dias","gracias","hermoso","computadora","idioma","educacion","desafio","experiencia","desarrollo"],
+  french: ["bonjour","merci","ordinateur","langue","education","defi","experience","developpement","beau","matin"]
 };
 
-function newSentence() {
-  const list = sentences[level] || sentences[3];
-  currentSentence = list[Math.floor(Math.random() * list.length)];
+let currentLang = "";
+let currentWord = "";
+let difficulty = 0;
 
-  document.getElementById("sentence").innerText = currentSentence;
-  document.getElementById("speechResult").innerText = "";
-  document.getElementById("typingResult").innerText = "";
-  document.getElementById("typingInput").value = "";
+function start(lang){
+  currentLang = lang;
+  document.querySelector("h1").style.display = "none";
+  document.querySelector(".card").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  next();
 }
 
-function speak(rate = 1) {
-  const speech = new SpeechSynthesisUtterance(currentSentence);
-  speech.lang = "en-US";
-  speech.rate = rate;
-  speechSynthesis.speak(speech);
+function next(){
+  let list = words[currentLang];
+  difficulty = Math.min(difficulty, list.length - 1);
+  currentWord = list[Math.floor(Math.random() * (difficulty + 1))];
+  document.getElementById("question").innerText = "Listen...";
+  document.getElementById("answer").value = "";
+  document.getElementById("result").innerText = "";
+  speak();
 }
 
-function similarity(a, b) {
-  a = a.toLowerCase();
-  b = b.toLowerCase();
-
-  let matches = 0;
-  const wordsA = a.split(" ");
-  const wordsB = b.split(" ");
-
-  wordsA.forEach(word => {
-    if (wordsB.includes(word)) matches++;
-  });
-
-  return matches / wordsA.length;
+function speak(){
+  let utterance = new SpeechSynthesisUtterance(currentWord);
+  speechSynthesis.speak(utterance);
 }
 
-function startRecognition() {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
-
-  recognition.onresult = function(event) {
-    const spoken = event.results[0][0].transcript;
-    const sim = similarity(currentSentence, spoken);
-
-    if (sim > 0.8) {
-      document.getElementById("speechResult").innerText = "✅ Great pronunciation!";
-      score++;
-      updateProgress();
-    } 
-    else if (sim > 0.5) {
-      document.getElementById("speechResult").innerText = "👍 Almost! Try again slowly.";
-    } 
-    else {
-      document.getElementById("speechResult").innerText = "❌ Listen and try again.";
-    }
-  };
-
-  recognition.start();
-}
-
-function checkTyping() {
-  const typed = document.getElementById("typingInput").value;
-  const sim = similarity(currentSentence, typed);
-
-  if (sim === 1) {
-    document.getElementById("typingResult").innerText = "✅ Perfect!";
-    score++;
-    updateProgress();
-  } 
-  else if (sim > 0.6) {
-    document.getElementById("typingResult").innerText = "👍 Almost correct!";
-  } 
-  else {
-    document.getElementById("typingResult").innerText = "❌ Try again.";
+function check(){
+  let user = document.getElementById("answer").value.toLowerCase();
+  if(user === currentWord){
+    document.getElementById("result").innerText = "✅ Correct!";
+    difficulty++;
+  } else {
+    document.getElementById("result").innerText = "❌ Correct answer: " + currentWord;
   }
+  setTimeout(next, 1500);
 }
-
-function updateProgress() {
-  document.getElementById("score").innerText = "Score: " + score;
-
-  if (score >= 5) {
-    level++;
-    score = 0;
-    document.getElementById("level").innerText = "Level: " + level;
-    alert("Level up! 🎉");
-  }
-
-  newSentence();
-}
-
-newSentence();
 </script>
 
 </body>
